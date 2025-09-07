@@ -20,7 +20,8 @@ export default function MobileNav() {
   return (
     <nav
       className={`fixed bottom-0 left-0 right-0 border-t shadow-md z-50 transition-colors duration-200
-        ${settings.darkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"}`}
+        ${settings.darkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"}
+        pb-[env(safe-area-inset-bottom)]`} // 🔹 Esto añade padding seguro en iPhone
     >
       <div className="flex justify-around items-center py-2">
         {navItems.map((item) => {
