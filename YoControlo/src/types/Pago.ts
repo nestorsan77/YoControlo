@@ -6,6 +6,7 @@ export interface Pago {
   cantidad: number
   fecha: string
   categoria?: string
-
-  pendienteDeSincronizar?: boolean // 👈 Nuevo campo opcional
+  icono?: string
+  tipo: "gasto" | "ingreso" 
+  pendienteDeSincronizar?: boolean
 }
