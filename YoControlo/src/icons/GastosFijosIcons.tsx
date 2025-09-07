@@ -1,23 +1,27 @@
-import { type ReactNode } from "react"
-import { FaHome, FaBolt, FaWater, FaCar, FaUniversity, FaPiggyBank, FaMobileAlt, FaShieldAlt } from "react-icons/fa"
-import { GiPayMoney, GiUpCard } from "react-icons/gi"
-import { IoMdBus } from "react-icons/io"
-
+// src/icons/GastosFijosIcons.ts
 export type GastoFijoIcon = {
   name: string
-  icon: ReactNode
+  src: string
 }
 
-export const GastosFijosIcons: GastoFijoIcon[] = [
-  { name: "Hipoteca", icon: <FaHome size={24} /> },
-  { name: "Luz", icon: <FaBolt size={24} /> },
-  { name: "Agua", icon: <FaWater size={24} /> },
-  { name: "Seguro Coche", icon: <FaCar size={24} /> },
-  { name: "Seguro Hogar", icon: <FaShieldAlt size={24} /> },
-  { name: "Inversión", icon: <FaUniversity size={24} /> },
-  { name: "Ahorro", icon: <FaPiggyBank size={24} /> },
-  { name: "Teléfono/Móvil", icon: <FaMobileAlt size={24} /> },
-  { name: "Transporte", icon: <IoMdBus size={24} /> },
-  { name: "Pago Tarjeta", icon: <GiUpCard size={24} /> },
-  { name: "Otros", icon: <GiPayMoney size={24} /> },
+export const GastosFijosIcons: GastoFijoIcon[] = [  
+  { name: "Airplane", src: "/image/svg/airplane.png" },
+  { name: "Aliexpress", src: "/image/svg/aliexpress.svg" },
+  { name: "Amazon-color", src: "/image/svg/amazon-color.svg" },
+  { name: "Apple-Pay", src: "/image/svg/apple-pay.svg" },
+  { name: "Apple", src: "/image/svg/apple.svg" },
+  { name: "Bizum", src: "/image/svg/bizum.png" },
+  { name: "Netflix", src: "/image/svg/netflix.svg" },
+  { name: "Phone-Calling", src: "/image/svg/phone-calling.svg" },
+  { name: "Salary", src: "/image/svg/salary.png" },
+  { name: "Smartphone-Touch-Screen", src: "/image/svg/smartphone-touch-screen.svg" },
+  { name: "Spotify", src: "/image/svg/spotify-color.svg" },
+  { name: "Transaction-Money", src: "/image/svg/transaction-money.svg" },
+  { name: "Transaction", src: "/image/svg/transaction.svg" },
+  { name: "Travel-Car", src: "/image/svg/travel-car.svg" },
+  { name: "Travel-Round", src: "/image/svg/travel-round.svg" },
+  { name: "Travel", src: "/image/svg/travel.svg" },
+  { name: "Wifi", src: "/image/svg/wifi.svg" },
+  { name: "Youtube", src: "/image/svg/youtube.svg" },
+  { name: "Hipoteca", src: "/image/svg/hipoteca.svg" },
 ]

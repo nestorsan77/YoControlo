@@ -50,7 +50,7 @@ export default function GastosFijos() {
       cantidad,
       categoria,
       periodicidad,
-      icono: iconoSeleccionado?.name ?? undefined,
+      icono: iconoSeleccionado?.src ?? undefined,
       fechaInicio: new Date().toISOString(),
       ultimoPago: undefined,
       fechaProgramada,
@@ -136,7 +136,7 @@ export default function GastosFijos() {
                 : 'border-gray-300 bg-white'
             }`}
           >
-            {iconObj.icon}
+            <img src={iconObj.src} alt="" width="50px" />
           </button>
         ))}
       </div>
@@ -164,7 +164,7 @@ export default function GastosFijos() {
               <div className="flex items-center gap-2">
                 {gasto.icono && (
                   <div className="text-2xl">
-                    {GastosFijosIcons.find(i => i.name === gasto.icono)?.icon}
+                    <img src={GastosFijosIcons.find(i => i.name === gasto.icono)?.src || gasto.icono} alt="" width="45px"/>
                   </div>
                 )}
                 <div>
