@@ -7,6 +7,8 @@ import { obtenerGastosFijos } from '../services/gastosFijosService'
 import type { Pago } from '../types/Pago'
 import { auth } from '../services/firebase'
 import { useSettings } from '../contexts/SettingsContext'
+import { eliminarPagoOnline } from '../services/firestoreService'
+import { eliminarPagoLocal } from '../services/indexedDbService'
 
 const colores = {
   gasto: '#f87171',
@@ -18,6 +20,28 @@ export default function Pagos() {
   const [pagos, setPagos] = useState<Pago[]>([])
   const [filtroPrincipal, setFiltroPrincipal] = useState<'Todos' | 'Gasto' | 'Ingreso'>('Todos')
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('Todos')
+
+
+const eliminarPago = async (pago: Pago) => {
+  const uid = auth.currentUser?.uid
+  if (!uid) return
+
+  // 🔹 Eliminar local
+  await eliminarPagoLocal(pago.id!)
+
+  // 🔹 Si hay conexión, eliminar online
+  if (navigator.onLine) {
+    try {
+      await eliminarPagoOnline(uid, pago.id!)
+    } catch (err) {
+      console.error('No se pudo eliminar online, se eliminará local y se marcará pendiente', err)
+      // opcional: marcarlo en IndexedDB como pendienteDeSincronizar
+    }
+  }
+
+  // 🔹 Actualizar estado local
+  setPagos(prev => prev.filter(p => p.id !== pago.id))
+}
 
   const { settings } = useSettings()
   const isDark = settings.darkMode
@@ -285,6 +309,12 @@ export default function Pagos() {
                       </div>
                     )}
                   </div>
+                  <button
+                  onClick={() => eliminarPago(pago)}
+                  className="text-red-500 font-bold px-2 py-1 rounded hover:bg-red-100 transition-colors"
+                  >
+                    X
+                  </button>
                 </motion.li>
               ))}
             </AnimatePresence>

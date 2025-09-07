@@ -3,6 +3,7 @@ import { db } from './firebase'
 import { collection, addDoc, getDocs } from 'firebase/firestore'
 import { type Pago } from '../types/Pago'
 import { query, where } from 'firebase/firestore'
+import { doc, deleteDoc } from 'firebase/firestore'
 
 const pagosRef = collection(db, 'pagos')
 
@@ -20,6 +21,11 @@ export async function obtenerPagos(uid: string): Promise<Pago[]> {
     id: doc.id,
     ...doc.data()
   })) as Pago[]
+}
+
+export async function eliminarPagoOnline(uid: string, pagoId: string) {
+  const pagoRef = doc(db, 'pagos', pagoId)
+  await deleteDoc(pagoRef)
 }
 
 export type { Pago }
