@@ -16,6 +16,12 @@ import { generarPagosAutomáticos } from './services/pagosAutomaticosService'
 
 
 export default function App() {
+   useEffect(() => {
+  document.title = "YoControlo"
+  const link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']")
+  if (link) link.href = "./image/dinero512x512.png"
+}, [])
+
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
