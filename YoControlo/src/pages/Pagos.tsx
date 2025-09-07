@@ -183,7 +183,7 @@ export default function Pagos() {
             return (
               <motion.button
                 key={f}
-                onClick={() => setFiltroPrincipal(f as any)}
+                onClick={() => setFiltroPrincipal(f)}
                 className={`px-4 py-2 rounded-full border transition-colors text-white ${bgClass}`}
                 whileTap={{ scale: 0.95 }}
               >

@@ -9,7 +9,7 @@ export async function sincronizarPagos() {
     if (pago.pendienteDeSincronizar) {
       try {
         // 🔹 Quitamos id temporal y flag antes de enviar
-        const { id: idLocal, pendienteDeSincronizar, ...pagoSinId } = pago
+        const { id: idLocal, ...pagoSinId } = pago
 
         // 🔹 Subir a Firestore → devuelve idReal
         const idReal = await agregarPago(pagoSinId)

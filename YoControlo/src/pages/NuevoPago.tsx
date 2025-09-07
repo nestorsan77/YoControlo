@@ -56,7 +56,7 @@ export default function NuevoPago() {
 
     try {
       if (navigator.onLine) {
-        const { id, pendienteDeSincronizar, ...pagoSinId } = nuevoPago
+        const { ...pagoSinId } = nuevoPago
         const idReal = await agregarPago(pagoSinId)
         await guardarPagoLocal({
           ...nuevoPago,
