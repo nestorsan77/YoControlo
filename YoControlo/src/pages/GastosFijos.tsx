@@ -8,15 +8,7 @@ import { gastosFijosIcons, type GastoFijoIcon } from '../icons/GastosFijosIcons'
 import type { GastoFijo } from '../types/GastoFijo'
 
 // Definimos un tipo que extiende GastoFijo con fechaProgramada obligatoria
-export type GastoFijoConProgramacion = {
-  id: string
-  nombre: string
-  cantidad: number
-  categoria?: string
-  icono?: string
-  periodicidad: 'Mensual' | 'Anual'
-  fechaInicio: string
-  ultimoPago?: string
+export type GastoFijoConProgramacion = GastoFijo & {
   fechaProgramada: string
 }
 
@@ -27,7 +19,7 @@ export default function GastosFijos() {
   const [categoria, setCategoria] = useState('')
   const [periodicidad, setPeriodicidad] = useState<'Mensual' | 'Anual'>('Mensual')
   const [iconoSeleccionado, setIconoSeleccionado] = useState<GastoFijoIcon | null>(null)
-  const [fechaProgramada, setFechaProgramada] = useState<string>(new Date().toISOString().slice(0,16)) // YYYY-MM-DDTHH:MM
+  const [fechaProgramada, setFechaProgramada] = useState<string>(new Date().toISOString().slice(0,16))
 
   const { settings } = useSettings()
   const isDark = settings.darkMode
@@ -37,19 +29,17 @@ export default function GastosFijos() {
   }, [])
 
   const cargarGastos = async () => {
-  const data = await obtenerGastosFijos()
+    const data = await obtenerGastosFijos()
 
-  // Tipo intermedio: puede venir sin fechaProgramada
-  type GastoFijoDesdeBackend = GastoFijo & { fechaProgramada?: string }
+    type GastoFijoDesdeBackend = GastoFijo & { fechaProgramada?: string }
 
-  const gastosConFecha: GastoFijoConProgramacion[] = (data as GastoFijoDesdeBackend[]).map(g => ({
-    ...g,
-    fechaProgramada: g.fechaProgramada || g.fechaInicio
-  }))
+    const gastosConFecha: GastoFijoConProgramacion[] = (data as GastoFijoDesdeBackend[]).map(g => ({
+      ...g,
+      fechaProgramada: g.fechaProgramada || g.fechaInicio
+    }))
 
-  setGastos(gastosConFecha)
-}
-
+    setGastos(gastosConFecha)
+  }
 
   const agregarGasto = async () => {
     if (!nombre || cantidad <= 0) return
@@ -63,7 +53,7 @@ export default function GastosFijos() {
       icono: iconoSeleccionado?.name ?? undefined,
       fechaInicio: new Date().toISOString(),
       ultimoPago: undefined,
-      fechaProgramada, // parte del tipo
+      fechaProgramada,
     }
 
     await guardarGastoFijo(nuevo)
@@ -82,10 +72,7 @@ export default function GastosFijos() {
   }
 
   const calcularProximaFecha = (gasto: GastoFijoConProgramacion) => {
-    const base = gasto.ultimoPago 
-      ? new Date(gasto.ultimoPago) 
-      : new Date(gasto.fechaProgramada)
-
+    const base = gasto.ultimoPago ? new Date(gasto.ultimoPago) : new Date(gasto.fechaProgramada)
     const proxima = new Date(base)
     if (gasto.periodicidad === 'Mensual') proxima.setMonth(proxima.getMonth() + 1)
     if (gasto.periodicidad === 'Anual') proxima.setFullYear(proxima.getFullYear() + 1)
@@ -137,7 +124,7 @@ export default function GastosFijos() {
 
       {/* Selector de iconos */}
       <div className="flex gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory mb-2">
-        {gastosFijosIcons.map((iconObj) => (
+        {gastosFijosIcons.map((iconObj: GastoFijoIcon) => (
           <button
             key={iconObj.name}
             onClick={() => setIconoSeleccionado(iconObj)}
@@ -164,7 +151,7 @@ export default function GastosFijos() {
       {/* Lista de gastos */}
       <ul className="space-y-2">
         <AnimatePresence>
-          {gastos.map(gasto => (
+          {gastos.map((gasto: GastoFijoConProgramacion) => (
             <motion.li
               key={gasto.id}
               className={`flex justify-between items-center p-2 border rounded transition-colors ${
