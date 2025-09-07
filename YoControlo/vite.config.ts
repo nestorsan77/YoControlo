@@ -17,17 +17,17 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'dinero128x128.png',
+            src: '/image/dinero128x128.png',
             sizes: '128x128',
             type: 'image/png',
           },
           {
-            src: 'dinero256x256.png',
+            src: '/image/dinero256x256.png',
             sizes: '256x256',
             type: 'image/png',
           },
           {
-            src: 'dinero512x512.png',
+            src: '/image/dinero512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
