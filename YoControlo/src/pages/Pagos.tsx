@@ -168,7 +168,7 @@ export default function Pagos() {
 
         {/* Filtros principales */}
         <div className="flex gap-2 overflow-x-auto mb-2">
-          {['Todos', 'Gasto', 'Ingreso'].map(f => {
+          {(['Todos', 'Gasto', 'Ingreso'] as const).map((f: 'Todos' | 'Gasto' | 'Ingreso') => {
             const isSelected = filtroPrincipal === f
             const bgClass = isSelected
               ? f === 'Gasto'
@@ -206,7 +206,7 @@ export default function Pagos() {
             return (
               <motion.button
                 key={cat}
-                onClick={() => setCategoriaFiltro(cat)}
+                onClick={() => setCategoriaFiltro(cat ?? '')}
                 className={`px-3 py-1 rounded-full border transition-colors ${bgClass}`}
                 whileTap={{ scale: 0.95 }}
               >

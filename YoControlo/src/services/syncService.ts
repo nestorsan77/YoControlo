@@ -1,7 +1,6 @@
 // syncService.tsx
 import { obtenerTodosLosPagosLocal, eliminarPagoLocal, guardarPagoLocal } from './indexedDbService'
 import { agregarPago } from './firestoreService'
-import type { Pago } from '../types/Pago'
 
 export async function sincronizarPagos() {
   const pagosLocales = await obtenerTodosLosPagosLocal()
