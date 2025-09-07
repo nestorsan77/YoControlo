@@ -1,5 +1,5 @@
 // src/services/firestoreService.ts
-import { db } from './firebase'
+import { db, auth } from './firebase'
 import { collection, addDoc, getDocs } from 'firebase/firestore'
 import { type Pago } from '../types/Pago'
 import { query, where } from 'firebase/firestore'
@@ -24,7 +24,12 @@ export async function obtenerPagos(uid: string): Promise<Pago[]> {
 }
 
 export async function eliminarPagoOnline(pagoId: string) {
+  console.log('eliminarPagoOnline', pagoId)
+  const user = auth.currentUser
+  if (!user) throw new Error('Usuario no autenticado')
+
   const pagoRef = doc(db, 'pagos', pagoId)
+  console.log('pagoRef', pagoRef)
   await deleteDoc(pagoRef)
 }
 

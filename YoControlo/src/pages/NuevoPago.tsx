@@ -52,6 +52,7 @@ export default function NuevoPago() {
       pendienteDeSincronizar: !navigator.onLine,
       icono,
       tipo,
+      pendienteDeEliminar: false
     }
 
     try {

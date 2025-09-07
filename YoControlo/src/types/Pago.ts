@@ -1,5 +1,6 @@
 // types/Pago.ts
 export interface Pago {
+  pendienteDeEliminar: boolean
   id?: string
   uid: string
   nombre: string

@@ -3,35 +3,46 @@ import type { GastoFijo } from '../types/GastoFijo'
 import type { Pago } from '../types/Pago'
 import { guardarPago, obtenerPagos } from './PagoService'
 
-const DB_NAME = 'FinanzasDB'
-const STORE_NAME = 'gastosFijos'
+const DB_NAME = 'yocontrolo-gastos-fijos'
+const STORE_NAME = 'gastos-fijos'
 
 async function getDB() {
   return openDB(DB_NAME, 1, {
     upgrade(db) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+        db.createObjectStore(STORE_NAME, {
+          keyPath: 'id'
+        })
       }
-    },
+    }
   })
 }
 
 // Obtener todos los gastos fijos
 export async function obtenerGastosFijos(): Promise<GastoFijo[]> {
   const db = await getDB()
-  return db.getAll(STORE_NAME)
+  return await db.getAll(STORE_NAME)
 }
 
 // Guardar o actualizar un gasto fijo
-export async function guardarGastoFijo(gasto: GastoFijo): Promise<void> {
+export async function guardarGastoFijo(gasto: GastoFijo) {
   const db = await getDB()
   await db.put(STORE_NAME, gasto)
 }
 
 // Eliminar un gasto fijo
-export async function eliminarGastoFijo(id: string): Promise<void> {
+export async function eliminarGastoFijo(id: string) {
   const db = await getDB()
   await db.delete(STORE_NAME, id)
+}
+
+export async function actualizarUltimoPagoGastoFijo(id: string, fechaUltimoPago: string) {
+  const db = await getDB()
+  const gasto = await db.get(STORE_NAME, id)
+  if (gasto) {
+    gasto.ultimoPago = fechaUltimoPago
+    await db.put(STORE_NAME, gasto)
+  }
 }
 
 // 🔹 Generar pagos pendientes según periodicidad y evitar duplicados
@@ -80,7 +91,8 @@ export async function generarPagosPendientes(uid: string): Promise<void> {
         tipo: 'gasto',
         fecha: fechaPago.toISOString(),
         icono: gasto.icono || '',
-        pendienteDeSincronizar: true
+        pendienteDeSincronizar: true,
+        pendienteDeEliminar: false
       }
 
       await guardarPago(pago)

@@ -1,14 +1,13 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useSwipeable } from 'react-swipeable'
 import { motion, AnimatePresence } from 'framer-motion'
-import { obtenerPagos } from '../services/firestoreService'
-import { obtenerPagosLocal, guardarPagoLocal } from '../services/indexedDbService'
-import { obtenerGastosFijos } from '../services/gastosFijosService'
+import { obtenerPagosLocal } from '../services/indexedDbService'
 import type { Pago } from '../types/Pago'
 import { auth } from '../services/firebase'
 import { useSettings } from '../contexts/SettingsContext'
 import { eliminarPagoOnline } from '../services/firestoreService'
 import { eliminarPagoLocal } from '../services/indexedDbService'
+import { marcarPagoParaEliminarLocal } from '../services/indexedDbService'
 
 const colores = {
   gasto: '#f87171',
@@ -21,27 +20,27 @@ export default function Pagos() {
   const [filtroPrincipal, setFiltroPrincipal] = useState<'Todos' | 'Gasto' | 'Ingreso'>('Todos')
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('Todos')
 
+  const eliminarPago = async (pago: Pago) => {
+    const uid = auth.currentUser?.uid
+    if (!uid) return
 
-const eliminarPago = async (pago: Pago) => {
-  const uid = auth.currentUser?.uid
-  if (!uid) return
-
-  // 🔹 Eliminar local
-  await eliminarPagoLocal(pago.id!)
-
-  // 🔹 Si hay conexión, eliminar online
-  if (navigator.onLine) {
-    try {
-      await eliminarPagoOnline(pago.id!)
-    } catch (err) {
-      console.error('No se pudo eliminar online, se eliminará local y se marcará pendiente', err)
-      // opcional: marcarlo en IndexedDB como pendienteDeSincronizar
+    if (navigator.onLine) {
+      // Si hay conexión, eliminar online y local
+      try {
+        await eliminarPagoOnline(pago.id!)
+        await eliminarPagoLocal(pago.id!)
+      } catch (err) {
+        console.error('No se pudo eliminar online, se marcará pendiente', err)
+        await marcarPagoParaEliminarLocal(pago.id!)
+      }
+    } else {
+      // Offline: marcar para eliminar
+      await marcarPagoParaEliminarLocal(pago.id!)
     }
-  }
 
-  // 🔹 Actualizar estado local
-  setPagos(prev => prev.filter(p => p.id !== pago.id))
-}
+    // Actualizar estado visual
+    setPagos(prev => prev.filter(p => p.id !== pago.id))
+  }
 
   const { settings } = useSettings()
   const isDark = settings.darkMode
@@ -60,60 +59,44 @@ const eliminarPago = async (pago: Pago) => {
     if (!uid) return
 
     const cargarPagos = async () => {
-      // 🔹 Obtener pagos locales
-      const pagosLocales = await obtenerPagosLocal(uid)
-
-      // 🔹 Obtener gastos fijos
-      const gastosFijos = await obtenerGastosFijos()
-
-      const ahora = new Date()
-      const nuevosPagos: Pago[] = []
-
-      for (const gasto of gastosFijos) {
-        const yaExiste = pagosLocales.some(p =>
-          p.nombre === gasto.nombre &&
-          p.tipo === 'gasto' &&
-          ((gasto.periodicidad === 'Mensual' &&
-            new Date(p.fecha).getMonth() === ahora.getMonth() &&
-            new Date(p.fecha).getFullYear() === ahora.getFullYear()) ||
-           (gasto.periodicidad === 'Anual' &&
-            new Date(p.fecha).getFullYear() === ahora.getFullYear()))
-        )
-
-        if (!yaExiste) {
-          const nuevoPago: Pago = {
-            id: crypto.randomUUID(),
-            nombre: gasto.nombre,
-            cantidad: gasto.cantidad,
-            categoria: gasto.categoria,
-            tipo: 'gasto',
-            fecha: ahora.toISOString(),
-            icono: gasto.icono || undefined,
-            uid: gasto.id || uid,
-          }
-          await guardarPagoLocal(nuevoPago)
-          nuevosPagos.push(nuevoPago)
-        }
-      }
-
-      let todosPagos = [...pagosLocales, ...nuevosPagos]
-
-      // 🔹 Si hay conexión online, sincronizamos con Firestore
-      if (navigator.onLine) {
-        const pagosOnline = await obtenerPagos(uid)
-        for (const pago of pagosOnline) {
-          await guardarPagoLocal(pago)
-        }
-        todosPagos = pagosOnline
-      }
+      console.log('🔄 Cargando pagos desde IndexedDB...')
+      
+      // 🔹 Obtener solo pagos locales
+      let pagosLocales = await obtenerPagosLocal(uid)
+      
+      // 🔹 Filtrar pagos marcados para eliminar del UI
+      pagosLocales = pagosLocales.filter(p => !p.pendienteDeEliminar)
 
       // 🔹 Orden descendente por fecha
-      todosPagos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+      pagosLocales.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
 
-      setPagos(todosPagos)
+      setPagos(pagosLocales)
+      console.log(`✅ Pagos cargados: ${pagosLocales.length}`)
     }
 
     cargarPagos()
+
+    // 🔹 Recargar pagos cuando la ventana obtenga el foco
+    // para capturar cambios hechos por otros procesos
+    const handleFocus = () => {
+      console.log('🔄 Ventana enfocada, recargando pagos...')
+      cargarPagos()
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('🔄 Pestaña visible, recargando pagos...')
+        cargarPagos()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
 
   const swipeHandlers = useSwipeable({
@@ -310,8 +293,8 @@ const eliminarPago = async (pago: Pago) => {
                     )}
                   </div>
                   <button
-                  onClick={() => eliminarPago(pago)}
-                  className="text-red-500 font-bold px-2 py-1 rounded hover:bg-red-100 transition-colors"
+                    onClick={() => eliminarPago(pago)}
+                    className="text-red-500 font-bold px-2 py-1 rounded hover:bg-red-100 transition-colors"
                   >
                     X
                   </button>

@@ -2,7 +2,7 @@ import { openDB } from 'idb'
 import type { Pago } from './firestoreService'
 
 const DB_NAME = 'yocontrolo-db'
-const STORE_NAME = 'pagos'
+export const STORE_NAME = 'pagos'
 
 export async function getDB() {
   return openDB(DB_NAME, 1, {
@@ -41,4 +41,16 @@ export async function eliminarPagoLocal(id: string) {
 export async function obtenerTodosLosPagosLocal(): Promise<Pago[]> {
   const db = await getDB()
   return await db.getAll(STORE_NAME)
+}
+
+export async function marcarPagoParaEliminarLocal(id: string) {
+  const db = await getDB()
+  const tx = db.transaction(STORE_NAME, 'readwrite')
+  const store = tx.objectStore(STORE_NAME)
+  const pago = await store.get(id)
+  if (pago) {
+    pago.pendienteDeEliminar = true
+    await store.put(pago)
+  }
+  await tx.done
 }
