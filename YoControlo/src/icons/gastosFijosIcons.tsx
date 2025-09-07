@@ -8,7 +8,7 @@ export type GastoFijoIcon = {
   icon: ReactNode
 }
 
-export const gastosFijosIcons: GastoFijoIcon[] = [
+export const GastosFijosIcons: GastoFijoIcon[] = [
   { name: "Hipoteca", icon: <FaHome size={24} /> },
   { name: "Luz", icon: <FaBolt size={24} /> },
   { name: "Agua", icon: <FaWater size={24} /> },

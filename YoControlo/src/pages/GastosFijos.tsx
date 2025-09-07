@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { v4 as uuidv4 } from 'uuid'
 import { useSettings } from '../contexts/SettingsContext'
 import { obtenerGastosFijos, guardarGastoFijo, eliminarGastoFijo } from '../services/gastosFijosService'
-import { gastosFijosIcons, type GastoFijoIcon } from '../icons/GastosFijosIcons'
+import { GastosFijosIcons, type GastoFijoIcon } from '../icons/GastosFijosIcons'
 import type { GastoFijo } from '../types/GastoFijo'
 
 // Definimos un tipo que extiende GastoFijo con fechaProgramada obligatoria
@@ -124,7 +124,7 @@ export default function GastosFijos() {
 
       {/* Selector de iconos */}
       <div className="flex gap-1 overflow-x-auto scroll-smooth snap-x snap-mandatory mb-2">
-        {gastosFijosIcons.map((iconObj: GastoFijoIcon) => (
+        {GastosFijosIcons.map((iconObj: GastoFijoIcon) => (
           <button
             key={iconObj.name}
             onClick={() => setIconoSeleccionado(iconObj)}
@@ -164,7 +164,7 @@ export default function GastosFijos() {
               <div className="flex items-center gap-2">
                 {gasto.icono && (
                   <div className="text-2xl">
-                    {gastosFijosIcons.find(i => i.name === gasto.icono)?.icon}
+                    {GastosFijosIcons.find(i => i.name === gasto.icono)?.icon}
                   </div>
                 )}
                 <div>
