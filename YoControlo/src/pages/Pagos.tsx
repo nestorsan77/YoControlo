@@ -32,7 +32,7 @@ const eliminarPago = async (pago: Pago) => {
   // 🔹 Si hay conexión, eliminar online
   if (navigator.onLine) {
     try {
-      await eliminarPagoOnline(uid, pago.id!)
+      await eliminarPagoOnline(pago.id!)
     } catch (err) {
       console.error('No se pudo eliminar online, se eliminará local y se marcará pendiente', err)
       // opcional: marcarlo en IndexedDB como pendienteDeSincronizar

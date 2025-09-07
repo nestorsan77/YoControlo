@@ -23,7 +23,7 @@ export async function obtenerPagos(uid: string): Promise<Pago[]> {
   })) as Pago[]
 }
 
-export async function eliminarPagoOnline(uid: string, pagoId: string) {
+export async function eliminarPagoOnline(pagoId: string) {
   const pagoRef = doc(db, 'pagos', pagoId)
   await deleteDoc(pagoRef)
 }
