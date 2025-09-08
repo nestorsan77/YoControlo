@@ -1,6 +1,7 @@
 // src/pages/Settings.tsx
 import { useSettings } from "../contexts/SettingsContext"
 import { BsMoon, BsSun, BsVolumeUp, BsBell, BsPhone } from "react-icons/bs"
+import LogoutButton from "../components/buttons/LogoutButton"
 
 export default function Settings() {
   const { settings, updateSetting, toggleDarkMode } = useSettings()
@@ -142,6 +143,7 @@ export default function Settings() {
               </label>
             </div>
           </div>
+          <LogoutButton />
         </div>
       </div>
     </div>
