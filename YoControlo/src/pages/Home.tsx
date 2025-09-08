@@ -6,6 +6,7 @@ import { auth } from '../services/firebase'
 import type { Pago } from '../types/Pago'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useSettings } from '../contexts/SettingsContext'
+import { NumberHelper } from '../helpers/NumberHelper'
 
 const colores = {
   gasto: '#f87171',    // rojo
@@ -74,7 +75,7 @@ export default function Home() {
             }`}
             layout
           >
-            <div className="text-lg font-bold">{totalGasto} €</div>
+            <div className="text-lg font-bold">{NumberHelper.formatTwoDecimals(totalGasto) } €</div>
             <div className="text-sm">Gasto total</div>
           </motion.div>
 
@@ -84,7 +85,7 @@ export default function Home() {
             }`}
             layout
           >
-            <div className="text-lg font-bold">{totalIngreso} €</div>
+            <div className="text-lg font-bold">{ NumberHelper.formatTwoDecimals(totalIngreso)} €</div>
             <div className="text-sm">Ingreso total</div>
           </motion.div>
 
@@ -100,7 +101,7 @@ export default function Home() {
             }`}
             layout
           >
-            <div className="text-lg font-bold">{saldo} €</div>
+            <div className="text-lg font-bold">{NumberHelper.formatTwoDecimals(saldo)} €</div>
             <div className="text-sm">Saldo</div>
           </motion.div>
         </div>
