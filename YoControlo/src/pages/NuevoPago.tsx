@@ -8,6 +8,7 @@ import { auth } from "../services/firebase"
 import type { Pago } from "../types/Pago"
 import { useSettings } from "../contexts/SettingsContext"
 import CantidadInput from "../components/inputs/CantidadInput"
+import PagoAnimacion from "../anims/PagoAnimacion"
 
 const categoriasGastos = [
   { nombre: "Genérico", icono: "/icons/coin.png" },
@@ -32,6 +33,11 @@ export default function NuevoPago() {
   const [icono, setIcono] = useState<string>("/icons/coin.png")
   const [tipo, setTipo] = useState<"gasto" | "ingreso">("gasto")
   const { settings } = useSettings()
+
+  const [mostrarAnimacion, setMostrarAnimacion] = useState(false)
+  // Nuevo estado para recordar la cantidad del pago animado
+  const [cantidadAnimacion, setCantidadAnimacion] = useState<number | null>(null)
+  
 
   const categorias = tipo === "gasto" ? categoriasGastos : categoriasIngresos
 
@@ -71,19 +77,17 @@ export default function NuevoPago() {
 
     try {
       if (navigator.onLine) {
-        // Online → primero Firestore
         const idReal = await agregarPago(pagoBase)
         const pagoConID: Pago = { ...pagoBase, id: idReal, pendienteDeSincronizar: false }
-
-        // Guardar en IndexedDB con el ID real
         await guardarPagoLocal(pagoConID)
-        alert(`Guardado online con ID: ${idReal}`)
       } else {
-        // Offline → guardamos con UUID local
         const pagoLocal: Pago = { ...pagoBase, id: crypto.randomUUID(), pendienteDeSincronizar: true }
         await guardarPagoLocal(pagoLocal)
-        alert("Guardado offline (se sincronizará luego)")
       }
+
+      // 👉 Mostramos animación en vez de alert
+      setCantidadAnimacion(cantidad)
+      setMostrarAnimacion(true)
 
       // Reset inputs
       setNombre("Genérico")
@@ -110,6 +114,18 @@ export default function NuevoPago() {
         settings.darkMode ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
+       {/* Animación flotante */}
+      {mostrarAnimacion && cantidadAnimacion !== null && (
+        <PagoAnimacion
+          tipo={tipo}
+          cantidad={cantidadAnimacion}
+          onFinish={() => {
+            setMostrarAnimacion(false)
+            setCantidadAnimacion(null) // limpiar
+          }}
+        />
+      )}
+
       <motion.form
         onSubmit={handleSubmit}
         className={`p-4 space-y-4 w-full max-w-md rounded-2xl shadow-lg transition-colors duration-200 ${

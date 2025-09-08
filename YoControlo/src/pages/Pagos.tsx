@@ -9,6 +9,7 @@ import { eliminarPagoOnline } from '../services/firestoreService'
 import { eliminarPagoLocal } from '../services/indexedDbService'
 import { marcarPagoParaEliminarLocal } from '../services/indexedDbService'
 import { NumberHelper } from '../helpers/NumberHelper'
+import Toast from "../components/Toast" 
 
 const colores = {
   gasto: '#f87171',
@@ -20,6 +21,12 @@ export default function Pagos() {
   const [pagos, setPagos] = useState<Pago[]>([])
   const [filtroPrincipal, setFiltroPrincipal] = useState<'Todos' | 'Gasto' | 'Ingreso'>('Todos')
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('Todos')
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 2500)
+  }
 
   const eliminarPago = async (pago: Pago) => {
     const uid = auth.currentUser?.uid
@@ -30,31 +37,23 @@ export default function Pagos() {
       return
     }
 
-    try {
+       try {
       if (navigator.onLine && !pago.pendienteDeSincronizar) {
-        // Si hay conexión y el pago está sincronizado, eliminar online primero
-        console.log('Eliminando pago online:', pago.id)
         await eliminarPagoOnline(pago.id!)
         await eliminarPagoLocal(pago.id!)
-        console.log('Pago eliminado correctamente')
+        showToast("Pago eliminado ✅", "success")
       } else if (pago.pendienteDeSincronizar) {
-        // Si el pago está pendiente de sincronizar, eliminarlo solo localmente
-        console.log('Eliminando pago local no sincronizado:', pago.id)
         await eliminarPagoLocal(pago.id!)
-        console.log('Pago local eliminado correctamente')
+        showToast("Pago eliminado localmente ✅", "success")
       } else {
-        // Sin conexión, marcar para eliminar cuando haya conexión
-        console.log('Marcando pago para eliminar (sin conexión):', pago.id)
         await marcarPagoParaEliminarLocal(pago.id!)
-        console.log('Pago marcado para eliminar')
+        showToast("Pago marcado para eliminar 🔄", "info")
       }
 
-      // Actualizar estado visual inmediatamente
       setPagos(prev => prev.filter(p => p.id !== pago.id))
-      
     } catch (err) {
       console.error('Error al eliminar pago:', err)
-      alert('Error al eliminar el pago. Inténtalo de nuevo.')
+      showToast("Error al eliminar el pago ❌", "error")
     }
   }
 
@@ -344,6 +343,14 @@ export default function Pagos() {
             </ul>
           )}
         </div>
+        {/* Toast de feedback */}
+        <Toast
+          message={toast?.message || ""}
+          type={toast?.type}
+          show={!!toast}
+          onClose={() => setToast(null)}
+          isDark={isDark}
+        />
       </div>
     </div>
   )
