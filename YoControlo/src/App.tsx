@@ -12,16 +12,19 @@ import { sincronizarTodo } from './services/syncService'
 import Header from './components/Header'
 import { SettingsProvider } from './contexts/SettingsContext'
 import GastosFijos from './pages/GastosFijos'
+import Splash from './components/Splash'
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [splashFinished, setSplashFinished] = useState(false)
+
+  // 🔹 Configuración del favicon y título
   useEffect(() => {
     document.title = "YoControlo"
     const link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']")
     if (link) link.href = "./image/dinero512x512.png"
   }, [])
-
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
 
   // 🔐 Escuchar cambios de usuario (login persistente)
   useEffect(() => {
@@ -48,16 +51,22 @@ export default function App() {
   useEffect(() => {
     const handleOnline = () => {
       console.log('✅ Conexión restaurada. Sincronizando todo...')
-      if (user) {
-        sincronizarTodo() // Esto incluye la generación de gastos automáticos
-      }
+      if (user) sincronizarTodo() // Esto incluye la generación de gastos automáticos
     }
 
     window.addEventListener('online', handleOnline)
     return () => window.removeEventListener('online', handleOnline)
   }, [user])
 
-  if (loading) return <p>Cargando...</p>
+  // 🔹 Mostrar splash mientras carga usuario y datos iniciales
+  if (!splashFinished || loading) {
+    return (
+      <Splash
+        //duration={2000} // 2s mínimo, pero se cierra al terminar carga si antes
+        onFinish={() => setSplashFinished(true)}
+      />
+    )
+  }
 
   return (
     <SettingsProvider>
