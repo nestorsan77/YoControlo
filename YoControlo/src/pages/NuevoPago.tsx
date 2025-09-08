@@ -9,6 +9,7 @@ import type { Pago } from "../types/Pago"
 import { useSettings } from "../contexts/SettingsContext"
 
 const categoriasGastos = [
+  { nombre: "Genérico", icono: "/icons/coin.png" },
   { nombre: "Netflix", icono: "/icons/netflix.png", sugerido: 15 },
   { nombre: "Amazon", icono: "/icons/amazon.png" },
   { nombre: "Viaje", icono: "/icons/airplane.png" },
@@ -17,15 +18,17 @@ const categoriasGastos = [
 ]
 
 const categoriasIngresos = [
+  { nombre: "Genérico", icono: "/icons/coin.png" },
   { nombre: "Sueldo", icono: "/icons/sueldo.png", sugerido: 1200 },
   { nombre: "Bizum", icono: "/icons/bizum.png" },
   { nombre: "Transferencia", icono: "/icons/transferencia.png" },
 ]
 
 export default function NuevoPago() {
-  const [nombre, setNombre] = useState("")
-  const [cantidad, setCantidad] = useState(0)
-  const [icono, setIcono] = useState<string | undefined>(undefined)
+  // Estado inicial genérico válido
+  const [nombre, setNombre] = useState("Genérico")
+  const [cantidad, setCantidad] = useState<number>(0)
+  const [icono, setIcono] = useState<string>("/icons/coin.png")
   const [tipo, setTipo] = useState<"gasto" | "ingreso">("gasto")
   const { settings } = useSettings()
 
@@ -52,7 +55,7 @@ export default function NuevoPago() {
       pendienteDeSincronizar: !navigator.onLine,
       icono,
       tipo,
-      pendienteDeEliminar: false
+      pendienteDeEliminar: false,
     }
 
     try {
@@ -70,9 +73,10 @@ export default function NuevoPago() {
         alert("Guardado offline (se sincronizará luego).")
       }
 
-      setNombre("")
+      // Reset al genérico
+      setNombre("Genérico")
       setCantidad(0)
-      setIcono(undefined)
+      setIcono("/icons/coin.png")
     } catch (err) {
       console.error("Error al guardar:", err)
       alert("Error al guardar el pago.")
@@ -83,20 +87,22 @@ export default function NuevoPago() {
     onSwipedLeft: () => setTipo("ingreso"),
     onSwipedRight: () => setTipo("gasto"),
     preventScrollOnSwipe: true,
-    trackTouch: true
+    trackTouch: true,
   })
 
   return (
-    <div 
-      {...swipeHandlers} 
+    <div
+      {...swipeHandlers}
       className={`min-h-screen w-full flex items-center justify-center transition-colors duration-200 ${
-        settings.darkMode ? 'bg-gray-900' : 'bg-gray-50'
+        settings.darkMode ? "bg-gray-900" : "bg-gray-50"
       }`}
     >
       <motion.form
         onSubmit={handleSubmit}
         className={`p-4 space-y-4 w-full max-w-md rounded-2xl shadow-lg transition-colors duration-200 ${
-          settings.darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          settings.darkMode
+            ? "bg-gray-800 text-white"
+            : "bg-white text-gray-900"
         }`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -107,7 +113,11 @@ export default function NuevoPago() {
           <motion.div
             layout
             className={`px-4 py-2 rounded-full cursor-pointer transition-colors ${
-              tipo === "gasto" ? "bg-red-500 text-white" : settings.darkMode ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-900"
+              tipo === "gasto"
+                ? "bg-red-500 text-white"
+                : settings.darkMode
+                ? "bg-gray-700 text-gray-300"
+                : "bg-gray-200 text-gray-900"
             }`}
             onClick={() => setTipo("gasto")}
           >
@@ -116,18 +126,26 @@ export default function NuevoPago() {
           <motion.div
             layout
             className={`px-4 py-2 rounded-full cursor-pointer transition-colors ${
-              tipo === "ingreso" ? "bg-green-500 text-white" : settings.darkMode ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-900"
+              tipo === "ingreso"
+                ? "bg-green-500 text-white"
+                : settings.darkMode
+                ? "bg-gray-700 text-gray-300"
+                : "bg-gray-200 text-gray-900"
             }`}
             onClick={() => setTipo("ingreso")}
           >
             Ingreso
           </motion.div>
         </div>
-        <p className={`text-center text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <p
+          className={`text-center text-sm ${
+            settings.darkMode ? "text-gray-400" : "text-gray-500"
+          }`}
+        >
           Desliza ↔ o pulsa para cambiar
         </p>
 
-        {/* Categorías rápidas con animación */}
+        {/* Categorías rápidas */}
         <AnimatePresence mode="wait">
           <motion.div
             key={tipo}
@@ -144,14 +162,18 @@ export default function NuevoPago() {
                 onClick={() => handleCategoriaClick(cat)}
                 whileTap={{ scale: 0.95 }}
                 className={`flex flex-col items-center p-2 border rounded-lg transition-colors duration-200 ${
-                  nombre === cat.nombre 
-                    ? "border-blue-500" 
-                    : settings.darkMode 
-                      ? "border-gray-600 hover:bg-gray-700" 
-                      : "border-gray-300 hover:bg-gray-100"
+                  nombre === cat.nombre
+                    ? "border-blue-500"
+                    : settings.darkMode
+                    ? "border-gray-600 hover:bg-gray-700"
+                    : "border-gray-300 hover:bg-gray-100"
                 }`}
               >
-                <img src={cat.icono} alt={cat.nombre} className="w-10 h-10 mb-1" />
+                <img
+                  src={cat.icono}
+                  alt={cat.nombre}
+                  className="w-10 h-10 mb-1"
+                />
                 <span className="text-sm">{cat.nombre}</span>
               </motion.button>
             ))}
@@ -165,9 +187,9 @@ export default function NuevoPago() {
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           className={`w-full p-2 border rounded transition-colors duration-200 ${
-            settings.darkMode 
-              ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-              : 'border-gray-300 bg-white text-gray-900'
+            settings.darkMode
+              ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400"
+              : "border-gray-300 bg-white text-gray-900"
           }`}
           required
         />
@@ -177,9 +199,9 @@ export default function NuevoPago() {
           value={cantidad}
           onChange={(e) => setCantidad(Number(e.target.value))}
           className={`w-full p-2 border rounded transition-colors duration-200 ${
-            settings.darkMode 
-              ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-              : 'border-gray-300 bg-white text-gray-900'
+            settings.darkMode
+              ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400"
+              : "border-gray-300 bg-white text-gray-900"
           }`}
           required
         />
