@@ -25,22 +25,37 @@ export default function Pagos() {
     const uid = auth.currentUser?.uid
     if (!uid) return
 
-    if (navigator.onLine) {
-      // Si hay conexión, eliminar online y local
-      try {
-        await eliminarPagoOnline(pago.id!)
-        await eliminarPagoLocal(pago.id!)
-      } catch (err) {
-        console.error('No se pudo eliminar online, se marcará pendiente', err)
-        await marcarPagoParaEliminarLocal(pago.id!)
-      }
-    } else {
-      // Offline: marcar para eliminar
-      await marcarPagoParaEliminarLocal(pago.id!)
+    // Confirmar eliminación
+    if (!confirm(`¿Estás seguro de eliminar "${pago.nombre}"?`)) {
+      return
     }
 
-    // Actualizar estado visual
-    setPagos(prev => prev.filter(p => p.id !== pago.id))
+    try {
+      if (navigator.onLine && !pago.pendienteDeSincronizar) {
+        // Si hay conexión y el pago está sincronizado, eliminar online primero
+        console.log('Eliminando pago online:', pago.id)
+        await eliminarPagoOnline(pago.id!)
+        await eliminarPagoLocal(pago.id!)
+        console.log('Pago eliminado correctamente')
+      } else if (pago.pendienteDeSincronizar) {
+        // Si el pago está pendiente de sincronizar, eliminarlo solo localmente
+        console.log('Eliminando pago local no sincronizado:', pago.id)
+        await eliminarPagoLocal(pago.id!)
+        console.log('Pago local eliminado correctamente')
+      } else {
+        // Sin conexión, marcar para eliminar cuando haya conexión
+        console.log('Marcando pago para eliminar (sin conexión):', pago.id)
+        await marcarPagoParaEliminarLocal(pago.id!)
+        console.log('Pago marcado para eliminar')
+      }
+
+      // Actualizar estado visual inmediatamente
+      setPagos(prev => prev.filter(p => p.id !== pago.id))
+      
+    } catch (err) {
+      console.error('Error al eliminar pago:', err)
+      alert('Error al eliminar el pago. Inténtalo de nuevo.')
+    }
   }
 
   const { settings } = useSettings()
@@ -55,30 +70,29 @@ export default function Pagos() {
     return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59)
   })
 
-  useEffect(() => {
+  const cargarPagos = async () => {
     const uid = auth.currentUser?.uid
     if (!uid) return
 
-    const cargarPagos = async () => {
-      console.log('🔄 Cargando pagos desde IndexedDB...')
-      
-      // 🔹 Obtener solo pagos locales
-      let pagosLocales = await obtenerPagosLocal(uid)
-      
-      // 🔹 Filtrar pagos marcados para eliminar del UI
-      pagosLocales = pagosLocales.filter(p => !p.pendienteDeEliminar)
+    console.log('🔄 Cargando pagos desde IndexedDB...')
+    
+    // Obtener solo pagos locales
+    let pagosLocales = await obtenerPagosLocal(uid)
+    
+    // Filtrar pagos marcados para eliminar del UI
+    pagosLocales = pagosLocales.filter(p => !p.pendienteDeEliminar)
 
-      // 🔹 Orden descendente por fecha
-      pagosLocales.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+    // Orden descendente por fecha
+    pagosLocales.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
 
-      setPagos(pagosLocales)
-      console.log(`✅ Pagos cargados: ${pagosLocales.length}`)
-    }
+    setPagos(pagosLocales)
+    console.log(`✅ Pagos cargados: ${pagosLocales.length}`)
+  }
 
+  useEffect(() => {
     cargarPagos()
 
-    // 🔹 Recargar pagos cuando la ventana obtenga el foco
-    // para capturar cambios hechos por otros procesos
+    // Recargar pagos cuando la ventana obtenga el foco
     const handleFocus = () => {
       console.log('🔄 Ventana enfocada, recargando pagos...')
       cargarPagos()
@@ -256,53 +270,70 @@ export default function Pagos() {
         <div className={`p-4 rounded-lg shadow-md transition-colors duration-200 ${
           isDark ? 'bg-gray-800' : 'bg-white'
         }`}>
-          <h2 className="font-semibold mb-2">Movimientos</h2>
-          <ul className="space-y-2">
-            <AnimatePresence>
-              {pagosFiltrados.map(pago => (
-                <motion.li
-                  key={pago.id}
-                  className={`flex items-center gap-3 border p-2 rounded-lg transition-colors ${
-                    pago.tipo === 'gasto'
-                      ? isDark
-                        ? 'border-red-700 bg-red-900'
-                        : 'border-red-400 bg-red-50'
-                      : isDark
-                        ? 'border-green-700 bg-green-900'
-                        : 'border-green-400 bg-green-50'
-                  }`}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                >
-                  {pago.icono ? (
-                    <img src={pago.icono} alt={pago.nombre} className="w-8 h-8 object-contain" />
-                  ) : (
-                    <div className={`w-8 h-8 rounded flex items-center justify-center text-sm transition-colors ${
-                      isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-600'
-                    }`}>?</div>
-                  )}
-                  <div className="flex-1">
-                    <div className="font-semibold">{pago.nombre}</div>
-                    <div className={`text-sm transition-colors ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {pago.cantidad} € · {new Date(pago.fecha).toLocaleString()}
-                    </div>
-                    {pago.categoria && (
-                      <div className={`text-xs transition-colors ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                        {pago.categoria}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => eliminarPago(pago)}
-                    className="text-red-500 font-bold px-2 py-1 rounded hover:bg-red-100 transition-colors"
+          <h2 className="font-semibold mb-2">Movimientos ({pagosFiltrados.length})</h2>
+          
+          {pagosFiltrados.length === 0 ? (
+            <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <p>No hay movimientos para mostrar</p>
+              <p className="text-sm mt-1">Ajusta los filtros o fechas para ver más resultados</p>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              <AnimatePresence>
+                {pagosFiltrados.map(pago => (
+                  <motion.li
+                    key={pago.id}
+                    className={`flex items-center gap-3 border p-3 rounded-lg transition-colors ${
+                      pago.tipo === 'gasto'
+                        ? isDark
+                          ? 'border-red-700 bg-red-900/20'
+                          : 'border-red-400 bg-red-50'
+                        : isDark
+                          ? 'border-green-700 bg-green-900/20'
+                          : 'border-green-400 bg-green-50'
+                    }`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    X
-                  </button>
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </ul>
+                    {pago.icono ? (
+                      <img src={pago.icono} alt={pago.nombre} className="w-8 h-8 object-contain flex-shrink-0" />
+                    ) : (
+                      <div className={`w-8 h-8 rounded flex items-center justify-center text-sm flex-shrink-0 transition-colors ${
+                        isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-600'
+                      }`}>?</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate">{pago.nombre}</div>
+                      <div className={`text-sm transition-colors ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {NumberHelper.formatTwoDecimals(pago.cantidad)} € · {new Date(pago.fecha).toLocaleString('es-ES')}
+                      </div>
+                      {pago.categoria && (
+                        <div className={`text-xs transition-colors ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                          {pago.categoria}
+                        </div>
+                      )}
+                      {pago.pendienteDeSincronizar && (
+                        <div className="text-xs text-orange-500">
+                          📤 Pendiente de sincronizar
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => eliminarPago(pago)}
+                      className={`text-red-500 font-bold px-3 py-2 rounded hover:bg-red-100 transition-colors flex-shrink-0 ${
+                        isDark ? 'hover:bg-red-900/30' : 'hover:bg-red-100'
+                      }`}
+                      title="Eliminar pago"
+                    >
+                      ✕
+                    </button>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
+            </ul>
+          )}
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ import { guardarPagoLocal } from "../services/indexedDbService"
 import { auth } from "../services/firebase"
 import type { Pago } from "../types/Pago"
 import { useSettings } from "../contexts/SettingsContext"
-import CantidadInput from "../components/inputs/CantidadInput";
+import CantidadInput from "../components/inputs/CantidadInput"
 
 const categoriasGastos = [
   { nombre: "Genérico", icono: "/icons/coin.png" },
@@ -26,10 +26,9 @@ const categoriasIngresos = [
 ]
 
 export default function NuevoPago() {
-  // Estado inicial genérico válido
   const [nombre, setNombre] = useState("Genérico")
   const [cantidad, setCantidad] = useState<number>(0)
-  const [cantidadStr, setCantidadStr] = useState<string>("") // Para el componente CantidadInput
+  const [cantidadStr, setCantidadStr] = useState<string>("")
   const [icono, setIcono] = useState<string>("/icons/coin.png")
   const [tipo, setTipo] = useState<"gasto" | "ingreso">("gasto")
   const { settings } = useSettings()
@@ -41,14 +40,12 @@ export default function NuevoPago() {
     setIcono(cat.icono)
     if (cat.sugerido) {
       setCantidad(cat.sugerido)
-      setCantidadStr(cat.sugerido.toString() + " €")
+      setCantidadStr(cat.sugerido.toString().replace(".", ",") + " €")
     }
   }
 
   const handleCantidadChange = (valor: string) => {
     setCantidadStr(valor)
-    
-    // Convertir a número para el estado cantidad
     const numericValue = valor.replace(" €", "").replace(",", ".")
     const numero = parseFloat(numericValue)
     setCantidad(!isNaN(numero) ? numero : 0)
@@ -56,17 +53,12 @@ export default function NuevoPago() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     const uid = auth.currentUser?.uid
     if (!uid) return alert("Usuario no autenticado")
+    if (cantidad <= 0) return alert("Introduce una cantidad válida")
 
-    if (cantidad <= 0) {
-      alert("Por favor, introduce una cantidad válida")
-      return
-    }
-
-    const nuevoPago: Pago = {
-      id: crypto.randomUUID(),
+    // Creamos el objeto pago sin ID para Firestore
+    const pagoBase: Omit<Pago, "id"> = {
       uid,
       nombre,
       cantidad,
@@ -79,27 +71,28 @@ export default function NuevoPago() {
 
     try {
       if (navigator.onLine) {
-        const { ...pagoSinId } = nuevoPago
-        const idReal = await agregarPago(pagoSinId)
-        await guardarPagoLocal({
-          ...nuevoPago,
-          id: idReal,
-          pendienteDeSincronizar: false,
-        })
-        alert(`Guardado con ID: ${idReal}`)
+        // Online → primero Firestore
+        const idReal = await agregarPago(pagoBase)
+        const pagoConID: Pago = { ...pagoBase, id: idReal, pendienteDeSincronizar: false }
+
+        // Guardar en IndexedDB con el ID real
+        await guardarPagoLocal(pagoConID)
+        alert(`Guardado online con ID: ${idReal}`)
       } else {
-        await guardarPagoLocal(nuevoPago)
-        alert("Guardado offline (se sincronizará luego).")
+        // Offline → guardamos con UUID local
+        const pagoLocal: Pago = { ...pagoBase, id: crypto.randomUUID(), pendienteDeSincronizar: true }
+        await guardarPagoLocal(pagoLocal)
+        alert("Guardado offline (se sincronizará luego)")
       }
 
-      // Reset al genérico
+      // Reset inputs
       setNombre("Genérico")
       setCantidad(0)
       setCantidadStr("")
       setIcono("/icons/coin.png")
     } catch (err) {
-      console.error("Error al guardar:", err)
-      alert("Error al guardar el pago.")
+      console.error("Error al guardar pago:", err)
+      alert("Error al guardar el pago")
     }
   }
 
@@ -120,15 +113,13 @@ export default function NuevoPago() {
       <motion.form
         onSubmit={handleSubmit}
         className={`p-4 space-y-4 w-full max-w-md rounded-2xl shadow-lg transition-colors duration-200 ${
-          settings.darkMode
-            ? "bg-gray-800 text-white"
-            : "bg-white text-gray-900"
+          settings.darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
         }`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Indicador animado */}
+        {/* Selector tipo */}
         <div className="flex justify-center gap-4">
           <motion.div
             layout
@@ -157,15 +148,8 @@ export default function NuevoPago() {
             Ingreso
           </motion.div>
         </div>
-        <p
-          className={`text-center text-sm ${
-            settings.darkMode ? "text-gray-400" : "text-gray-500"
-          }`}
-        >
-          Desliza ↔ o pulsa para cambiar
-        </p>
 
-        {/* Categorías rápidas */}
+        {/* Categorías */}
         <AnimatePresence mode="wait">
           <motion.div
             key={tipo}
@@ -189,11 +173,7 @@ export default function NuevoPago() {
                     : "border-gray-300 hover:bg-gray-100"
                 }`}
               >
-                <img
-                  src={cat.icono}
-                  alt={cat.nombre}
-                  className="w-10 h-10 mb-1"
-                />
+                <img src={cat.icono} alt={cat.nombre} className="w-10 h-10 mb-1" />
                 <span className="text-sm">{cat.nombre}</span>
               </motion.button>
             ))}
@@ -213,7 +193,6 @@ export default function NuevoPago() {
           }`}
           required
         />
-        
         <CantidadInput
           cantidad={cantidadStr}
           setCantidad={handleCantidadChange}

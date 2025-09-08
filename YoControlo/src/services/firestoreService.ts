@@ -1,6 +1,6 @@
 // src/services/firestoreService.ts
-import { db, auth } from './firebase'
-import { collection, addDoc, getDocs } from 'firebase/firestore'
+import { db } from './firebase'
+import { collection, addDoc, getDocs, getDoc } from 'firebase/firestore'
 import { type Pago } from '../types/Pago'
 import { query, where } from 'firebase/firestore'
 import { doc, deleteDoc } from 'firebase/firestore'
@@ -23,14 +23,33 @@ export async function obtenerPagos(uid: string): Promise<Pago[]> {
   })) as Pago[]
 }
 
-export async function eliminarPagoOnline(pagoId: string) {
-  console.log('eliminarPagoOnline', pagoId)
-  const user = auth.currentUser
-  if (!user) throw new Error('Usuario no autenticado')
+export async function eliminarPagoOnline(id: string) {
+  try {
+    // Limpiar ID por si viene con espacios extra
+    const cleanId = id.trim()
+    
+    if (!cleanId) {
+      console.warn('ID inválido, no se puede eliminar:', id)
+      return
+    }
 
-  const pagoRef = doc(db, 'pagos', pagoId)
-  console.log('pagoRef', pagoRef)
-  await deleteDoc(pagoRef)
+    console.log('Intentando eliminar pago online, ID:', cleanId)
+    
+    const pagoRef = doc(db, 'pagos', cleanId)
+    console.log('Referencia docRef:', pagoRef.path)
+
+    const docSnapshot = await getDoc(pagoRef)
+    if (!docSnapshot.exists()) {
+      console.warn('⚠️ Documento no existe en Firestore, nada que eliminar:', cleanId)
+      return
+    }
+
+    await deleteDoc(pagoRef)
+    console.log('✅ DeleteDoc llamado para:', pagoRef.path)
+  } catch (error) {
+    console.error('❌ Error eliminando pago online:', error)
+    throw error // opcional: propagar error para manejarlo en UI
+  }
 }
 
 export type { Pago }
