@@ -7,6 +7,8 @@ import { guardarPagoLocal } from "../services/indexedDbService"
 import { auth } from "../services/firebase"
 import type { Pago } from "../types/Pago"
 import { useSettings } from "../contexts/SettingsContext"
+import CantidadInput from "../components/inputs/CantidadInput";
+
 
 const categoriasGastos = [
   { nombre: "Genérico", icono: "/icons/coin.png" },
@@ -193,19 +195,15 @@ export default function NuevoPago() {
           }`}
           required
         />
-        <input
-          type="number"
+        <CantidadInput
+          cantidad={cantidad ? cantidad + " €" : ""} // si no hay cantidad, dejamos vacío
+          setCantidad={(valor) => {
+            const raw = valor.replace(/[^\d]/g, "")
+            setCantidad(raw ? Number(raw) : 0) // <-- aquí ponemos 0 en vez de undefined
+          }}
+          isDark={settings.darkMode}
           placeholder="Cantidad"
-          value={cantidad}
-          onChange={(e) => setCantidad(Number(e.target.value))}
-          className={`w-full p-2 border rounded transition-colors duration-200 ${
-            settings.darkMode
-              ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400"
-              : "border-gray-300 bg-white text-gray-900"
-          }`}
-          required
         />
-
         {/* Preview */}
         {icono && (
           <motion.div

@@ -11,8 +11,9 @@ import {
 } from '../services/gastosFijosService'
 import { GastosFijosIcons, type GastoFijoIcon } from '../icons/GastosFijosIcons'
 import type { GastoFijo } from '../types/GastoFijo'
+import CantidadInput from "../components/inputs/CantidadInput";
 
-// Definimos un tipo que extiende GastoFijo con fechaProgramada obligatoria
+// Tipo extendido con fechaProgramada obligatoria
 export type GastoFijoConProgramacion = GastoFijo & { 
   fechaProgramada: string 
 }
@@ -20,7 +21,7 @@ export type GastoFijoConProgramacion = GastoFijo & {
 export default function GastosFijos() {
   const [gastos, setGastos] = useState<GastoFijoConProgramacion[]>([])
   const [nombre, setNombre] = useState('')
-  const [cantidad, setCantidad] = useState(0)
+  const [cantidad, setCantidad] = useState<string>("") // 👈 string con €
   const [categoria, setCategoria] = useState('')
   const [periodicidad, setPeriodicidad] = useState<'Mensual' | 'Anual'>('Mensual')
   const [iconoSeleccionado, setIconoSeleccionado] = useState<GastoFijoIcon | null>(null)
@@ -36,20 +37,19 @@ export default function GastosFijos() {
     // Verificar pagos cada hora
     const intervalo = setInterval(() => {
       verificarPagosPendientes()
-    }, 3600000) // 1 hora = 3600000ms
+    }, 3600000)
 
     return () => clearInterval(intervalo)
   }, [])
 
   const cargarGastos = async () => {
     const data = await obtenerGastosFijos()
-    
     type GastoFijoDesdeBackend = GastoFijo & { fechaProgramada?: string }
+    
     const gastosConFecha: GastoFijoConProgramacion[] = (data as GastoFijoDesdeBackend[]).map(g => ({
       ...g,
       fechaProgramada: g.fechaProgramada || g.fechaInicio
     }))
-    
     setGastos(gastosConFecha)
   }
 
@@ -61,10 +61,9 @@ export default function GastosFijos() {
   const verificarPagosPendientes = async () => {
     setVerificandoPagos(true)
     try {
-      // Aquí deberías pasar el uid del usuario actual
-      const uid = 'usuario-actual' // Esto debería venir del contexto de autenticación
+      const uid = 'usuario-actual' // ⚠️ reemplazar con uid real
       await verificarYGenerarPagosPendientes(uid)
-      await cargarGastos() // Recargar para actualizar las fechas
+      await cargarGastos()
     } catch (error) {
       console.error('Error al verificar pagos pendientes:', error)
     } finally {
@@ -73,31 +72,31 @@ export default function GastosFijos() {
   }
 
   const agregarGasto = async () => {
-    if (!nombre || cantidad <= 0) return
+    const cantidadNumerica = Number(cantidad.replace(/\D/g, "")) || 0
+    if (!nombre || cantidadNumerica <= 0) return
 
     const nuevo: GastoFijoConProgramacion = {
       id: uuidv4(),
       nombre,
-      cantidad,
+      cantidad: cantidadNumerica, // 👈 guardamos solo el número
       categoria,
       periodicidad,
       icono: iconoSeleccionado?.src ?? undefined,
-      fechaInicio: fechaProgramada, // Usar la fecha programada como fecha de inicio
+      fechaInicio: fechaProgramada,
       ultimoPago: undefined,
       fechaProgramada,
     }
 
     await guardarGastoFijo(nuevo)
-    
-    // Limpiar formulario
+
+    // Reset formulario
     setNombre('')
-    setCantidad(0)
+    setCantidad('')
     setCategoria('')
     setPeriodicidad('Mensual')
     setIconoSeleccionado(null)
     setFechaProgramada(new Date().toISOString().slice(0,16))
-    
-    // Verificar inmediatamente si este nuevo gasto genera pagos
+
     await verificarPagosPendientes()
     await cargarGastos()
   }
@@ -110,10 +109,8 @@ export default function GastosFijos() {
   const calcularProximaFecha = (gasto: GastoFijoConProgramacion) => {
     const ahora = new Date()
     const fechaBase = gasto.ultimoPago ? new Date(gasto.ultimoPago) : new Date(gasto.fechaProgramada)
-    
     const proximaFecha = new Date(fechaBase)
     
-    // Calcular la próxima fecha según periodicidad
     if (gasto.periodicidad === 'Mensual') {
       while (proximaFecha <= ahora) {
         proximaFecha.setMonth(proximaFecha.getMonth() + 1)
@@ -123,18 +120,15 @@ export default function GastosFijos() {
         proximaFecha.setFullYear(proximaFecha.getFullYear() + 1)
       }
     }
-    
     return proximaFecha
   }
 
   const obtenerEstadoGasto = (gasto: GastoFijoConProgramacion) => {
     const ahora = new Date()
     const fechaBase = gasto.ultimoPago ? new Date(gasto.ultimoPago) : new Date(gasto.fechaProgramada)
-    
     const fechaEsperada = new Date(fechaBase)
     let pagosPendientes = 0
     
-    // Contar cuántos pagos deberían haberse hecho
     if (gasto.periodicidad === 'Mensual') {
       while (fechaEsperada <= ahora) {
         pagosPendientes++
@@ -147,7 +141,6 @@ export default function GastosFijos() {
       }
     }
     
-    // Si hay último pago, restar 1 porque ese ya se hizo
     if (gasto.ultimoPago) {
       pagosPendientes = Math.max(0, pagosPendientes - 1)
     }
@@ -199,14 +192,10 @@ export default function GastosFijos() {
             isDark ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
           }`}
         />
-        <input
-          type="number"
-          placeholder="Cantidad"
-          value={cantidad}
-          onChange={e => setCantidad(Number(e.target.value))}
-          className={`p-2 border rounded transition-colors ${
-            isDark ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
-          }`}
+        <CantidadInput
+          cantidad={cantidad}
+          setCantidad={setCantidad}
+          isDark={isDark}
         />
         <input
           type="text"
@@ -263,7 +252,7 @@ export default function GastosFijos() {
         Agregar gasto
       </button>
 
-      {/* Lista de gastos */}
+      {/* Lista */}
       <ul className="space-y-2">
         <AnimatePresence>
           {gastos.map((gasto: GastoFijoConProgramacion) => {
@@ -287,11 +276,7 @@ export default function GastosFijos() {
                 <div className="flex items-center gap-3">
                   {gasto.icono && (
                     <div className="text-2xl">
-                      <img
-                        src={GastosFijosIcons.find(i => i.name === gasto.icono)?.src || gasto.icono}
-                        alt=""
-                        width="45px"
-                      />
+                      <img src={gasto.icono} alt="" width="45px" />
                     </div>
                   )}
                   <div>
@@ -326,7 +311,7 @@ export default function GastosFijos() {
           })}
         </AnimatePresence>
       </ul>
-      
+
       {gastos.length === 0 && (
         <div className="text-center text-gray-500 mt-8">
           <p>No tienes gastos fijos configurados.</p>
