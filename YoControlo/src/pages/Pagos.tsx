@@ -8,6 +8,7 @@ import { useSettings } from '../contexts/SettingsContext'
 import { eliminarPagoOnline } from '../services/firestoreService'
 import { eliminarPagoLocal } from '../services/indexedDbService'
 import { marcarPagoParaEliminarLocal } from '../services/indexedDbService'
+import { NumberHelper } from '../helpers/NumberHelper'
 
 const colores = {
   gasto: '#f87171',
@@ -230,7 +231,7 @@ export default function Pagos() {
               isDark ? 'bg-red-800 text-red-300' : 'bg-red-100 text-red-600'
             }`}
           >
-            <div className="text-lg font-bold">{totalGasto} €</div>
+           <div className="text-lg font-bold">{NumberHelper.formatTwoDecimals(totalGasto)} €</div>
             <div className="text-sm">Gasto total</div>
           </motion.div>
           <motion.div
@@ -238,7 +239,7 @@ export default function Pagos() {
               isDark ? 'bg-green-800 text-green-300' : 'bg-green-100 text-green-600'
             }`}
           >
-            <div className="text-lg font-bold">{totalIngreso} €</div>
+            <div className="text-lg font-bold">{NumberHelper.formatTwoDecimals(totalIngreso)} €</div>
             <div className="text-sm">Ingreso total</div>
           </motion.div>
           <motion.div
@@ -246,7 +247,7 @@ export default function Pagos() {
               saldo >= 0 ? (isDark ? 'bg-blue-800 text-blue-300' : 'bg-blue-100 text-blue-600') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-900')
             }`}
           >
-            <div className="text-lg font-bold">{saldo} €</div>
+            <div className="text-lg font-bold">{NumberHelper.formatTwoDecimals(saldo)} €</div>
             <div className="text-sm">Saldo</div>
           </motion.div>
         </div>

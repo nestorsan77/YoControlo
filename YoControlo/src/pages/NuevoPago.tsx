@@ -9,7 +9,6 @@ import type { Pago } from "../types/Pago"
 import { useSettings } from "../contexts/SettingsContext"
 import CantidadInput from "../components/inputs/CantidadInput";
 
-
 const categoriasGastos = [
   { nombre: "Genérico", icono: "/icons/coin.png" },
   { nombre: "Netflix", icono: "/icons/netflix.png", sugerido: 15 },
@@ -30,6 +29,7 @@ export default function NuevoPago() {
   // Estado inicial genérico válido
   const [nombre, setNombre] = useState("Genérico")
   const [cantidad, setCantidad] = useState<number>(0)
+  const [cantidadStr, setCantidadStr] = useState<string>("") // Para el componente CantidadInput
   const [icono, setIcono] = useState<string>("/icons/coin.png")
   const [tipo, setTipo] = useState<"gasto" | "ingreso">("gasto")
   const { settings } = useSettings()
@@ -39,7 +39,19 @@ export default function NuevoPago() {
   const handleCategoriaClick = (cat: typeof categorias[0]) => {
     setNombre(cat.nombre)
     setIcono(cat.icono)
-    if (cat.sugerido) setCantidad(cat.sugerido)
+    if (cat.sugerido) {
+      setCantidad(cat.sugerido)
+      setCantidadStr(cat.sugerido.toString() + " €")
+    }
+  }
+
+  const handleCantidadChange = (valor: string) => {
+    setCantidadStr(valor)
+    
+    // Convertir a número para el estado cantidad
+    const numericValue = valor.replace(" €", "").replace(",", ".")
+    const numero = parseFloat(numericValue)
+    setCantidad(!isNaN(numero) ? numero : 0)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,6 +59,11 @@ export default function NuevoPago() {
 
     const uid = auth.currentUser?.uid
     if (!uid) return alert("Usuario no autenticado")
+
+    if (cantidad <= 0) {
+      alert("Por favor, introduce una cantidad válida")
+      return
+    }
 
     const nuevoPago: Pago = {
       id: crypto.randomUUID(),
@@ -78,6 +95,7 @@ export default function NuevoPago() {
       // Reset al genérico
       setNombre("Genérico")
       setCantidad(0)
+      setCantidadStr("")
       setIcono("/icons/coin.png")
     } catch (err) {
       console.error("Error al guardar:", err)
@@ -195,15 +213,14 @@ export default function NuevoPago() {
           }`}
           required
         />
+        
         <CantidadInput
-          cantidad={cantidad ? cantidad + " €" : ""} // si no hay cantidad, dejamos vacío
-          setCantidad={(valor) => {
-            const raw = valor.replace(/[^\d]/g, "")
-            setCantidad(raw ? Number(raw) : 0) // <-- aquí ponemos 0 en vez de undefined
-          }}
+          cantidad={cantidadStr}
+          setCantidad={handleCantidadChange}
           isDark={settings.darkMode}
-          placeholder="Cantidad"
+          placeholder="0,00"
         />
+
         {/* Preview */}
         {icono && (
           <motion.div
@@ -213,15 +230,25 @@ export default function NuevoPago() {
           >
             <img src={icono} alt="icono" className="w-6 h-6" />
             <span>{nombre}</span>
+            {cantidad > 0 && (
+              <span className={`text-sm ${tipo === "gasto" ? "text-red-500" : "text-green-500"}`}>
+                {cantidad.toFixed(2)} €
+              </span>
+            )}
           </motion.div>
         )}
 
         <motion.button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition-colors duration-200"
-          whileTap={{ scale: 0.95 }}
+          disabled={cantidad <= 0}
+          className={`w-full py-2 rounded transition-colors duration-200 ${
+            cantidad <= 0
+              ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
+          whileTap={{ scale: cantidad > 0 ? 0.95 : 1 }}
         >
-          Guardar {tipo}
+          Guardar {tipo} {cantidad > 0 && `(${cantidad.toFixed(2)} €)`}
         </motion.button>
       </motion.form>
     </div>
