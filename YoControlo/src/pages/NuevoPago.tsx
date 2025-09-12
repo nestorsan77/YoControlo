@@ -1,5 +1,6 @@
 // src/pages/NuevoPago.tsx
 import { useState } from "react"
+import { useEffect } from "react"
 import { useSwipeable } from "react-swipeable"
 import { motion, AnimatePresence } from "framer-motion"
 import { agregarPago } from "../services/firestoreService"
@@ -33,6 +34,14 @@ export default function NuevoPago() {
   const [icono, setIcono] = useState<string>("/icons/coin.png")
   const [tipo, setTipo] = useState<"gasto" | "ingreso">("gasto")
   const { settings } = useSettings()
+
+  useEffect(() => {
+  const primera = categorias[0]
+  setNombre(primera.nombre)
+  setIcono(primera.icono)
+  setCantidad(0)
+  setCantidadStr("")
+}, [tipo])
 
   const [mostrarAnimacion, setMostrarAnimacion] = useState(false)
   // Nuevo estado para recordar la cantidad del pago animado

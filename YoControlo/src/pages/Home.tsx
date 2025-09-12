@@ -121,17 +121,17 @@ export default function Home() {
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  label
+                  label={({ name, value }) => `${name}: ${NumberHelper.formatTwoDecimals(value ?? 0)} €`}
                 >
                   {dataPie.map((entry, index) => (
                     <Cell
-                      key={`cell-${index}`}
+                      key={`cell-${NumberHelper.formatTwoDecimals(index)}`}
                       fill={colores[entry.tipo as 'gasto' | 'ingreso']}
                     />
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => `${value} €`}
+                  formatter={(value: number) => `${NumberHelper.formatTwoDecimals(value)} €`}
                   contentStyle={{
                     backgroundColor: isDark ? '#374151' : '#ffffff',
                     border: isDark ? '1px solid #4B5563' : '1px solid #d1d5db',
@@ -172,7 +172,7 @@ export default function Home() {
                 <div className="flex-1">
                   <div className="font-semibold transition-colors">{pago.nombre}</div>
                   <div className={`text-sm transition-colors ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {pago.cantidad} € · {new Date(pago.fecha).toLocaleString()}
+                     {NumberHelper.formatTwoDecimals(pago.cantidad)} € · {new Date(pago.fecha).toLocaleString()}
                   </div>
                 </div>
               </motion.li>
